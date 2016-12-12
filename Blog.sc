@@ -64,7 +64,7 @@ object htmlContent {
   val bootstrapCss = List(
     link(
       rel := "stylesheet",
-      href := "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+      href := "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css"
     ),
     link(
       rel := "stylesheet",
@@ -183,8 +183,42 @@ object htmlContent {
     )
   }
 
+  val groupedPostsByMonth = sortedPosts.groupBy {
+    case (postDate, postFilename, _) => monthYearDateFormatter.format(dateFormatter.parse(postDate))
+  }
+
+  val groupedPostsHtmlByMonth = groupedPostsByMonth.map {
+    case (month, postList) => (month, postList map {
+      case (postDate, postFilename, _) =>
+        div(`class` := "card")(
+          div(`class` := "card-block")(
+            h4(`class` := "card-title")(
+              a(mdNameToTitle(postFilename), href := ("blog/" + mdNameToHtml(postFilename))),
+              a(
+                span(`class` := "fa fa-twitter"),
+                `class` := "share-title",
+                style := "float: right;",
+                href := tweetPostUrl(postFilename),
+                target := "_blank"
+              )
+            )
+          )
+        )
+    })
+  }
+
+  val groupedPostsHtml = groupedPostsHtmlByMonth.map {
+    case (month, postList) => div(
+      span(`class` := "blog-post-meta")(month),
+      div(`class` := "card-deck-wrapper")(
+        div(`class` := "card-deck")(
+          postList
+        )
+      )
+    )
+  }.toList
+
   val HTML = {
-    var currIndexMonth = ""
     html(
       head(scalatags.Text.tags2.title(blogTitle), bootstrapCss, link(rel := "stylesheet", href := "blog.css"), metaViewport),
       body(
@@ -194,24 +228,7 @@ object htmlContent {
           ),
           div(`class` := "row")(
             div(`class` := "col-sm-8 blog-main")(
-              for (
-                (postDate, postFilename, _) <- sortedPosts
-              ) yield {
-                val monthYearHeader = monthYearDateFormatter.format(dateFormatter.parse(postDate))
-                val monthYearStyle = monthYearHeader match {
-                  case s: String if s != currIndexMonth => "margin-bottom: 10em;"
-                  case _ => "display: none;"
-                }
-
-                currIndexMonth = monthYearHeader
-
-                div(
-                  span(`class` := "blog-post-meta", style := monthYearStyle)(monthYearHeader),
-                  h2(`class` := "blog-index-post-title",
-                    a(mdNameToTitle(postFilename), href := ("blog/" + mdNameToHtml(postFilename)))
-                  )
-                )
-              }
+              groupedPostsHtml
             ),
             sidebar
           )
