@@ -193,7 +193,7 @@ object htmlContent {
   }
 
   val groupedPostsByMonth = sortedPosts.groupBy {
-    case (postDate, postFilename, _) => monthYearDateFormatter.format(dateFormatter.parse(postDate))
+    case (postDate, postFilename, _) => dateFormatter.parse(postDate)
   }
 
   val groupedPostsHtmlByMonth = groupedPostsByMonth.map {
@@ -221,7 +221,7 @@ object htmlContent {
 
   val groupedPostsHtml = groupedPostsHtmlByMonth.map {
     case (month, postList) => div(
-      span(`class` := "blog-post-meta")(month),
+      span(`class` := "blog-post-meta")(monthYearDateFormatter.format(month)),
       postList
     )
   }.toList
