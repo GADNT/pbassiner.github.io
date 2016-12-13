@@ -9,13 +9,15 @@ import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import scala.collection.immutable.TreeMap
+
 // Cleanup
 rm ! pwd / "index.html"
 rm ! pwd / 'blog
 
-val utcFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
 val dateFormatter = new SimpleDateFormat("yyyy-MM-dd")
 val monthYearDateFormatter = new SimpleDateFormat("MMMM yyyy")
+val monthYearDateFormatterForSorting = new SimpleDateFormat("yyyy-MM")
 val commentDateFormatter = new SimpleDateFormat("MMM dd, yyyy")
 
 val currentDate = dateFormatter.format(Calendar.getInstance().getTime())
@@ -193,7 +195,7 @@ object htmlContent {
   }
 
   val groupedPostsByMonth = sortedPosts.groupBy {
-    case (postDate, postFilename, _) => dateFormatter.parse(postDate)
+    case (postDate, postFilename, _) => monthYearDateFormatterForSorting.format(dateFormatter.parse(postDate))
   }
 
   val groupedPostsHtmlByMonth = groupedPostsByMonth.map {
@@ -219,9 +221,9 @@ object htmlContent {
     })
   }
 
-  val groupedPostsHtml = groupedPostsHtmlByMonth.map {
+  val groupedPostsHtml = TreeMap(groupedPostsHtmlByMonth.toArray:_*)(implicitly[Ordering[String]].reverse).map {
     case (month, postList) => div(
-      span(`class` := "blog-post-meta")(monthYearDateFormatter.format(month)),
+      span(`class` := "blog-post-meta")(monthYearDateFormatter.format(monthYearDateFormatterForSorting.parse(month))),
       postList
     )
   }.toList
